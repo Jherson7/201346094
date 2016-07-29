@@ -1,6 +1,8 @@
 # depslib dependency file v1.0
-1469738745 source:/home/jherson/201346094/Fase1_201346094/main.c
+1469836363 source:/home/jherson/201346094/Fase1_201346094/main.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
+	<sys/stat.h>
+	<stdbool.h>
 
