@@ -1,14 +1,15 @@
 # depslib dependency file v1.0
-1469836363 source:/home/jherson/201346094/Fase1_201346094/main.c
+1469920563 source:/home/jherson/201346094/Fase1_201346094/main.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	<sys/stat.h>
 	<stdbool.h>
+	<discos.h>
 
 1469915549 source:/home/jherson/201346094/Fase1_201346094/src/discos.cpp
 	"discos.h"
 
-1469915571 /home/jherson/201346094/Fase1_201346094/include/discos.h
+1469920581 /home/jherson/201346094/Fase1_201346094/include/discos.h
 	<time.h>
 

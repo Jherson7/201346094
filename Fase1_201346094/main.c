@@ -9,6 +9,7 @@
 void crearDisco(char token[], int posIni);
 void inicio();
 void buildDisk(char *nombre,char *ruta,int tam,int unidad);
+void deleteDisk(char *token, int indice);
 //variables globales para la creacion de disco
 char unidad[2];
 char path[200]="";
@@ -30,8 +31,9 @@ int n=0;
     {
         printf("Ingrese comandos a Ejecutar!\n");
         char comando[200]="";
+
         fgets(comando,200,stdin);
-        strcpy(comando,"Mkdisk -size::2 -path::\"/home/jherson/Escritorio/fa/\" -name::\"j.dsk\"");
+        //strcpy(comando,"Mkdisk -size::2 -path::\"/home/jherson/Escritorio/fa/\" -name::\"jaa.dsk\" +unit::K");
         int o;
         char *primerComando=(char*)malloc(sizeof(10));
         for(o=0;o<200;o++){
@@ -40,8 +42,9 @@ int n=0;
                 if(strcmp(primerComando,"Mkdisk")==0){
                     crearDisco(comando,o);
                     break;
-                }else if(strcmp(primerComando,"Rmdisk")==0){
-
+                }else if(strcmp(primerComando,"Rmdisk")==0||strcmp(primerComando,"rmDisk")==0){
+                        deleteDisk(comando,o);
+                        break;
 
 //(strcmp(comando[0],'-')==0)||(strcmp(comando[0],' ')==0)||(strcmp(comando[0],'+')==0)
               //  else if(strcmp(primerComando,"fdisk")==0)
@@ -89,8 +92,7 @@ void crearDisco(char token[200],int posIni){
 
                 for(;posIni<200;posIni++,copi++){
                     if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)){
-                        printf("entro no se porque\n");
-                        break;
+                           break;
                     }
 
                     tama[copi]=token[posIni];
@@ -105,8 +107,7 @@ void crearDisco(char token[200],int posIni){
                 path[copi]='"';
                for(;posIni<200;posIni++,copi++){
                     if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)){
-                        printf("entro no se porque\n");
-                        break;
+                       break;
                     }
 
                       ruta[copi]=token[posIni];
@@ -134,11 +135,9 @@ void crearDisco(char token[200],int posIni){
 
               for(;posIni<200;posIni++,copi++){
                      if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=='\0')||(token[posIni]=='"')){
-                         printf("entro no se porque\n");
-                         break;
+                        break;
                      }
-
-                       ext[copi]=token[posIni];
+                   ext[copi]=token[posIni];
                  }
 
               ext[copi]='\0';
@@ -154,18 +153,26 @@ void crearDisco(char token[200],int posIni){
             posIni++;
             copi=0;
             }
-            else if(strcpy(ins,"unit")==0||strcpy(ins,"Unit")==0){
-                posIni+=3;
-                if(strcpy(token[posIni],"M")==0){
+            else if(strcmp(ins,"unit")==0||strcmp(ins,"Unit")==0){
+                char otro[90];
+                int h;
+                for(h=0;h<90;h++)
+                    otro[h]=token[h];
+
+
+                posIni+=2;
+                if(token[posIni]=='M'){
                     unit=1;
                     unin=true;
-                }else if(strcpy(token[posIni],"K")==0){
+                }else if(token[posIni]=='K'){
                      unit=2;
                      unin=true;
                 }
                 else{
                     printf("Error en la especificacion de unidad de tamanio %c",token[posIni]);
+                    nom=false;tam=0;pat=false;
                     break;
+
                 }
                 copi=0;
             }
@@ -291,5 +298,51 @@ void buildDisk(char *nombre, char *ruta, int tam, int unidad){
         fclose(fichero)
 
 */
+
+}
+
+
+void deleteDisk(char *token, int indice){
+    char ruta[100]={0};
+    int copi;
+    char ins[10]={0};
+    bool flag=false;
+    for(copi=0;indice<200|| token[indice]!='\0';indice++){
+        if(token[indice]=='-'||token[indice]=='+')
+        {
+            indice++;//aumento la variable para comenzar a copiar el comando
+            while(token[indice]!=':'){//ciclo hasta que encuentro el primer : para sacar su valor
+               ins[copi]= token[indice];
+               copi++;
+               indice++;
+            }
+            if(strcmp(ins,"path")==0||strcmp(ins,"path")==0){
+                indice+=3;
+                copi=0;
+                while(token[indice]!='"'){//ciclo hasta que encuentro '"' para sacar su ruta
+                   ruta[copi]= token[indice];
+                   copi++;
+                   indice++;
+                }
+                flag=true;
+                break;
+            }else{
+                printf("Error en la ruta de disco,ERROR! %s\n",ins);
+                break;
+            }
+        }
+    }
+
+    if(flag){
+        int r=remove(ruta);
+        if(r==0){
+                 printf("Eliminacion correcta de disco\n");
+        }
+        else{
+               printf("Error al Eliminar el Disco: %s probablemente no exista el disco!\n",ruta);
+        }
+
+    }
+
 
 }

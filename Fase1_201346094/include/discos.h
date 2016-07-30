@@ -28,4 +28,5 @@ typedef struct MasterBootRecord{
 typedef struct Vacio{
     char espacio[1024];
 }basura;
+
 #endif // DISCOS_H
