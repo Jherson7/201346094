@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <discos.h>
 
 //declaracion de prototipos de los metodos que voy a requerir
 void crearDisco(char token[], int posIni);
@@ -30,6 +31,7 @@ int n=0;
         printf("Ingrese comandos a Ejecutar!\n");
         char comando[200]="";
         fgets(comando,200,stdin);
+        strcpy(comando,"Mkdisk -size::2 -path::\"/home/jherson/Escritorio/fa/\" -name::\"j.dsk\"");
         int o;
         char *primerComando=(char*)malloc(sizeof(10));
         for(o=0;o<200;o++){
@@ -38,7 +40,9 @@ int n=0;
                 if(strcmp(primerComando,"Mkdisk")==0){
                     crearDisco(comando,o);
                     break;
-                //else if(strcmp(primerComando,"Rmdisk")==0)
+                }else if(strcmp(primerComando,"Rmdisk")==0){
+
+
 //(strcmp(comando[0],'-')==0)||(strcmp(comando[0],' ')==0)||(strcmp(comando[0],'+')==0)
               //  else if(strcmp(primerComando,"fdisk")==0)
 
@@ -199,18 +203,93 @@ void buildDisk(char *nombre, char *ruta, int tam, int unidad){
         exit(1);
     }
     else{
-        if(unidad==1){
-           //FILE *indx=fopen(rutaManejador,"ab");
+        FILE* fichero;//archivo que simulara el disco duro
+
+        //creacion del tiempo en forma de char
+        time_t tiempo = time(0);
+        struct tm *tlocal = localtime(&tiempo);
+        char output[19];
+        strftime(output,19,"%d/%m/%y %H:%M:%S",tlocal);
+        //termina creacion de tiempo
+        //inicio a quitarles las comillas a la ruta para poder crear el archivo-------------------
+        int k;
+        int v=0;
+        for(k=1;ruta[k]!='"';k++){
+            v++;
+        }
+        v++;
+        ruta[v++]='\0';
+        strcat(ruta,nombre);
+        char *nueva=(char*)malloc(200);
+        for(k=1;ruta[k]!='\0';k++){
+            nueva[k-1]=ruta[k];
+        }
+        strcat(nueva,"\0");
+        //termino de copiar la ruta sin comillas-------------------------
+
+        MasterBR temp;
+
+        if(unidad==2){//por si el tamanio es en Kilobytes
+          tam=tam*1024;
         }
         else{
-
+          tam=tam*1024*1024;
         }
+
+        //-------------creacion del disco
+
+        fichero = fopen(nueva, "ab");
+        //vamos a copiar los parametros a MBR
+        strcpy(temp.mbr_fecha_creacion,output);//copio la fecha de creacion al MBR
+        temp.mbr_tamanio=(tam-sizeof(temp));//le asigno el tamanio del disco restando el tamanio del mbr
+        temp.mbr_disk_signature=1;
+        //---------------
+         basura tempBasura;
+        int j;
+        for(j=0; j<4; j++){
+            strcpy(temp.mbr_particion_[j].part_status,"0");
+            temp.mbr_particion_[j].part_type=malloc(1);
+            strcpy(temp.mbr_particion_[j].part_type,"");
+            strcpy(temp.mbr_particion_[j].part_fit,"");
+            temp.mbr_particion_[j].part_start=0;
+            temp.mbr_particion_[j].part_size=0;
+            strcpy(temp.mbr_particion_[j].part_name,"");
+            temp.mbr_particion_[j].part_id=j+1;
+        }
+        fseek(fichero,0,SEEK_SET);
+        fwrite(&temp,sizeof(MasterBR),1,fichero);
+        //---------------
+        int i;
+        tam=(tam-sizeof(MasterBR))/sizeof(basura);
+        for(i=0; i< tam; i++){
+            fseek(fichero,0,SEEK_END);
+            strcpy(tempBasura.espacio,"");
+            fwrite(&tempBasura,sizeof(basura),1,fichero);
+            fflush(fichero);
+        }
+
+       fclose(fichero);
+       fichero = fopen(nueva, "r");
+       fseek(fichero,0,SEEK_SET);
+       MasterBR tempMBR;
+       fread(&tempMBR,sizeof(MasterBR),1,fichero);
+       printf("Informacion del disco:\nTamanio: %d\nFecha Creacion: %s\n",tempMBR.mbr_tamanio,tempMBR.mbr_fecha_creacion);
+       fclose(fichero);
     }
     /*
     int p= mkdir(ruta, 0777);
     if(p<0){
         printf("Error en la ruta de directorio: %s porfavor intente de nuevo\n",ruta);
         return;
-    }*/
+    }
+        char cero='0';
+        for(v=0;v<tam*1024*1024;v++){
+           fseek(fichero,0,SEEK_END);
+           fputc('0',fichero);
+           fflush(fichero);
+        }
+        fclose(fichero)
+
+*/
 
 }

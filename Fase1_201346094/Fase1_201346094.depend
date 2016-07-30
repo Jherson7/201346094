@@ -6,3 +6,9 @@
 	<sys/stat.h>
 	<stdbool.h>
 
+1469915549 source:/home/jherson/201346094/Fase1_201346094/src/discos.cpp
+	"discos.h"
+
+1469915571 /home/jherson/201346094/Fase1_201346094/include/discos.h
+	<time.h>
+
