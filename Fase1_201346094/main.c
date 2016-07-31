@@ -10,6 +10,7 @@ void crearDisco(char token[], int posIni);
 void inicio();
 void buildDisk(char *nombre,char *ruta,int tam,int unidad);
 void deleteDisk(char *token, int indice);
+void comandoFseek(char *token,int posIni);
 //variables globales para la creacion de disco
 char unidad[2];
 char path[200]="";
@@ -45,11 +46,12 @@ int n=0;
                 }else if(strcmp(primerComando,"Rmdisk")==0||strcmp(primerComando,"rmDisk")==0){
                         deleteDisk(comando,o);
                         break;
-
-//(strcmp(comando[0],'-')==0)||(strcmp(comando[0],' ')==0)||(strcmp(comando[0],'+')==0)
-              //  else if(strcmp(primerComando,"fdisk")==0)
-
-               } else{
+               }
+                else if(strcmp(primerComando,"fdisk")==0||strcmp(primerComando,"fDisk")==0){
+                           comandoFseek(comando,o);;
+                           break;
+                }
+                else{
                     printf("Error comando no reconocido!\n");
                     break;
                     }
@@ -62,8 +64,6 @@ int n=0;
 
 
     }
-
-
 }
 void crearDisco(char token[200],int posIni){
     char *ins=malloc(sizeof(20));
@@ -341,8 +341,208 @@ void deleteDisk(char *token, int indice){
         else{
                printf("Error al Eliminar el Disco: %s probablemente no exista el disco!\n",ruta);
         }
-
     }
+}
 
+void comandoFseek(char *token, int posIni){
+    char *ins=malloc(sizeof(20));
+    int tam=0;//variable para el tamanio de la particion con atoi
+    char ruta[200]={0};//para el path del disco donde se va a crear la particion
+    char tama[20]={0}; //para capturar el tamanio de la particion en char
+    char nombre[20]={0};//para el nombre de la particion
+    char unidad[1]={0};// para la dimensional del tamanio K,B,G
+    char tipo[2]={0};//para el tipo de particion P,E,L
+    char ajuste[5]={0}; // para el tipo de ajuste BF,MF,WF
+    char delet[6]={0}; // para el tipo de eliminacion puede ser Fast ||Full
+    int add=0;// para indicar cuanto de espacio se le va aniadir a la particion
+    char add1[20]={0};
+    int copi;
+
+    for(copi=0;posIni<200|| token[posIni]!='\0';posIni++){
+        if(token[posIni]=='-'||token[posIni]=='+')
+        {
+            posIni++;//aumento la variable para comenzar a copiar el comando
+            while(token[posIni]!=':'){//ciclo hasta que encuentro el primer : para sacar su valor
+               ins[copi]= token[posIni];
+               copi++;
+               posIni++;
+            }
+            ins[copi]='\0';//limito el caracter para poder compararlo
+
+          //***--------------comienza la obtencion de size*******-------------
+            if((strcmp(ins,"size")==0)||(strcmp(ins,"Size")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"){
+                    posIni+=2;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)){
+                               break;
+                        }
+                        tama[copi]=token[posIni];
+                    }
+                    tama[copi]='\0';
+                    tam =atoi(tama);//conversion a int del tamanio del disco
+                    if(tam>0)
+                        printf("");
+                    else
+                        printf("Error en el tamanio de la particion : %s\n",tama);break;
+                    posIni--;
+                    copi=0;
+                }else{
+                    printf("Error en parametro size\n");
+                    break;
+                }
+            }//---**********-termina la obtencion de size--------------------
+            //------------comienza la obtencion del path****-------------------
+            else if((strcmp(ins,"path")==0)||(strcmp(ins,"Path")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"&&token[posIni+3]=="\""){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=="\"")){
+                            if(token[posIni]=="\"")
+                                printf("");
+                            else
+                                printf("Error falta \" en el path,Error\n");
+                            break;
+                        }
+                        ruta[copi]=token[posIni];
+                    }
+                    ruta[copi]='\0';
+                }else{
+                    printf("Error en parametro path!!\n");
+                    break;
+                }
+            }
+            //-**********/--termina la obtencion del path**--------------
+
+            //----******comienza la obtencion del name***------------
+            else if((strcmp(ins,"name")==0)||(strcmp(ins,"Name")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"&&token[posIni+3]=="\""){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=="\"")){
+                            if(token[posIni]=="\"")
+                                printf(""); //aqui van las flag
+                            else
+                                printf("Error falta \" en el nombre,Error\n");
+                            break;
+                        }
+                        nombre[copi]=token[posIni];
+                    }
+                   nombre[copi]='\0';
+                 }
+            }
+            //---------**termina la obtencion del name***------------
+            //********----------------comienza la obtencion del unit**-----------------
+            else if((strcmp(ins,"unit")==0)||(strcmp(ins,"Unit")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=="\0")){
+                           break;
+                        }
+                       unidad[copi]=token[posIni];
+                    }
+                   unidad[copi]='\0';
+                   if(unidad=="M"||unidad=="B"||unidad=="K")
+                       printf("");//activar bandera de dimensional
+                   else
+                       printf("Error en la dimensional de tamanio: %s,ERROR!'n",unidad);
+                 }else{
+                    printf("Error en el parameto UNIT %s,ERROR!\n",ins);
+                }
+            }
+            //*********-------termina la obtencion del unit**-------------------
+            //----------inicia la obtencion del type**----------------------
+            else if((strcmp(ins,"type")==0)||(strcmp(ins,"type")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=="\0")){
+                           break;
+                        }
+                       tipo[copi]=token[posIni];
+                    }
+                   tipo[copi]='\0';
+                   if(tipo=="P"||tipo=="E"||tipo=="L")
+                       printf("");//activar bandera de dimensional
+                   else
+                       printf("Error en la dimensional de type: %s,ERROR!'n",tipo);
+                 }else{
+                    printf("Error en el parameto TYPE %s,ERROR!\n",ins);
+                }
+            }
+            //*****-*-*-*-* termina la obtencion del type*-*-*-*-*-
+            //--------INICIA OBTENCION DEL FIT**------------
+            else if((strcmp(ins,"fit")==0)||(strcmp(ins,"Fit")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=="\0")){
+                           break;
+                        }
+                       ajuste[copi]=token[posIni];
+                    }
+                   ajuste[copi]='\0';
+                   if(ajuste=="BF"||ajuste=="MF"||ajuste=="WF")
+                       printf("");//activar bandera de dimensional
+                   else
+                       printf("Error en la dimensional de AJUSTE: %s,ERROR!'n",ajuste);
+                 }else{
+                    printf("Error en el parameto AJUSTE %s,ERROR!\n",ins);
+                }
+            }
+
+            //---------- TERMINA OBTENCION DEL FIT...=-=-=-=-=
+            //--------- INICIA la obtencion del DELETE*-*-*-*-*-*-*
+            else if((strcmp(ins,"delete")==0)||(strcmp(ins,"Delete")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=="\0")){
+                           break;
+                        }
+                       delet[copi]=token[posIni];
+                    }
+                   delet[copi]='\0';
+                   if(delet=="Fast"||delet=="Full"||delet=="fast"||delet=="full")
+                       printf("");//activar bandera de dimensional
+                   else
+                       printf("Error en la dimensional de DELETE: %s,ERROR!'n",delet);
+                 }else{
+                    printf("Error en el parameto delet %s,ERROR!\n",ins);
+                }
+            }
+            //*-*-*-*-*-* TERMINA LA OBTENCION DEL DELETE/-*-*-/-/--*-
+            //***-*-*-*INICIA LA OBTENCION DEL ADD/-/-/-/-/-/-/-/-/
+            else if((strcmp(ins,"add")==0)||(strcmp(ins,"Add")==0)){
+                if(token[posIni+1]==":"&&token[posIni+2]==":"){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=="\0")){
+                           break;
+                        }
+                       add1[copi]=token[posIni];
+                    }
+                   add1[copi]='\0';
+                   if(atoi(add1)>0)
+                       printf("");//activar bandera de dimensional
+                   else
+                       printf("Error en la dimensional de ADD: %s,ERROR!'n",add1);
+                 }else{
+                    printf("Error en el parameto delet %s,ADD!\n",ins);
+                }
+            }
+            //-/-/-/-/-/-termina la obtencion del add/-/-/-/-/-/-/
+        }
+    }//*************termina ciclo for de la linea de comandos*----------------
 
 }
+
