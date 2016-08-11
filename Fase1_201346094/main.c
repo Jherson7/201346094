@@ -16,21 +16,34 @@ void montarParticion(char token[], int posIni);
 void eliminarParticion(char ruta[], char nombre[], int tipo);
 void comandoExect(char token[], int posIni);
 void ejecutarComandos(char comando[]);
+void desmontar(char token[], int posIni);
 //variables globales para la creacion de disco
 char unidad[2];
 char path[200]="";
 char name[20]="";
 int tamanio=0;
-MDD DISCOS[27];
-int indiceDiscos=1;
+int indiceDiscos=0;
+MasterDisk DISK;
 char *abecedario[27]= {"","a","b","c","d","e","f","g","h","i","j","k","l","m",
                        "n","o","p","q","r","s","t","u","v","w","x","y","z",};
 int main()
 {
-    int l;
-    for(l=0;l<27;l++){
-        DISCOS[l].id=0;
-     }
+
+    FILE *discos;
+    discos=fopen("/home/jherson/Escritorio/manejador.dsk","r+");
+    fseek(discos,0,SEEK_SET);
+    fwrite(&DISK,sizeof(MasterDisk),1,discos);
+   // DISK.indicador=0; para inicializar el archivo de discos
+    if(discos){
+        if(DISK.indicador<=0){
+            int l;
+            for(l=0;l<27;l++){
+                DISK.DISCOSS[l].id=0;
+            }
+            DISK.indicador=0;
+        }
+    }
+    fclose(discos);
     inicio();
     return 0;
 }
@@ -85,9 +98,12 @@ int n=0;
                 else if(strcmp(primerComando,"mount")==0||strcmp(primerComando,"mount")==0){
                     montarParticion(comando,o);;
                        break;
+                } else if(strcmp(primerComando,"ummount")==0||strcmp(primerComando,"unMount")==0){
+                    montarParticion(comando,o);;
+                       break;
                 }
                 else if(strcmp(primerComando,"exec")==0||strcmp(primerComando,"mount")==0){
-                    comandoExect(comando,o);;
+                    comandoExect(comando,o);
                        break;
                 }
                 else{
@@ -101,6 +117,11 @@ int n=0;
     }
 }
 
+void desmontar(char token[], int posIni){
+
+}
+
+//umount -id1::vda1 -id2::vdb2 -id3::vdc1
 void comandoExect(char token[], int posIni){
     int copi=0;
     char ruta[100];
@@ -1137,8 +1158,13 @@ void montarParticion(char token[200], int posIni){
 }
 void buildPartition(char ruta[],char nombre[]){
     FILE *archivo;
+    FILE *disca;
+    disca=fopen("/home/jherson/Escritorio/manejador.dsk","r+");
+    MasterDisk DISCO;
+    fread(&DISCO,sizeof(MasterDisk),1,disca);
     int k;
     archivo=fopen(ruta,"r+");
+    bool recursiva=false;
     if(archivo!=NULL){//el archivo si existe
        MasterBR tmp;
        fseek(archivo,0,SEEK_SET);
@@ -1176,50 +1202,69 @@ void buildPartition(char ruta[],char nombre[]){
                              aja=false;
                         }
                     }
-
                }
            }
        }
        //----termino de verificar que exista la particion
       bool flg=false;
+      bool hay=true;
         if(!ex ){//si existe la particion es primaria || logica
             for(k=0;k<27;k++){
-               if(DISCOS[k].id!=0){//pregunta si el id es distinto de cero pero al principio es cero???
-                 if(strcmp(DISCOS[k].nombre,ruta)==0){
+               if(DISCO.DISCOSS[k].id!=0){//pregunta si el id es distinto de cero pero al principio es cero???
+                 if(strcmp(DISCO.DISCOSS[k].nombre,ruta)==0){
                      flg=true;
-                     if(DISCOS[k].llenas==0){//esto es para la primera particion del Disco sda1
-                         DISCOS[k].particiones[DISCOS[k].llenas]=malloc(sizeof(nombre+1));
-                         strcpy(DISCOS[k].particiones[DISCOS[k].llenas],nombre);
-                         DISCOS[k].llenas++;
+                     if(DISCO.DISCOSS[k].llenas==0){//esto es para la primera particion del Disco sda1
+                         DISCO.DISCOSS[k].particiones[DISCO.DISCOSS[k].llenas]=malloc(sizeof(nombre+1));
+                         strcpy(DISCO.DISCOSS[k].particiones[DISCO.DISCOSS[k].llenas],nombre);
+                         DISCO.DISCOSS[k].llenas++;
+                         break;
                      }else{//ya tiene particiones el disco
                          int r;
-                         bool hay=true;
-                         for(r=0;r<DISCOS[k].llenas;r++){//aqui voy a verificar que no haya montado esa particion
-                             if((DISCOS[k].particiones[r],nombre)==0){
+                         hay=true;
+                         for(r=0;r<DISCO.DISCOSS[k].llenas;r++){//aqui voy a verificar que no haya montado esa particion
+                             if(strcmp(DISCO.DISCOSS[k].particiones[r],nombre)==0){
                                  hay=false;
                                  printf("Ya se monto esa particion! ERROR! %s",nombre);
                                  break;
                              }
                          }
                          if(hay){//si no he montado esa particion la voy a montar
-                             DISCOS[k].particiones[DISCOS[k].llenas]=malloc(sizeof(nombre+1));
-                             strcpy(DISCOS[k].particiones[DISCOS[k].llenas],nombre);
-                             DISCOS[k].llenas++;
+                             DISCO.DISCOSS[k].particiones[DISCO.DISCOSS[k].llenas]=malloc(sizeof(nombre+1));
+                             strcpy(DISCO.DISCOSS[k].particiones[DISCO.DISCOSS[k].llenas],nombre);
+                             DISCO.DISCOSS[k].llenas++;
+                             break;
                          }
                      }
                   }
+               if(!hay)
+                   break;
                }
             }
         }
 
-      if(!flg){//verificar si ocupo && !ex
-           DISCOS[indiceDiscos].id=indiceDiscos;//creacion de un nuevo disco el indice me va a servir despues
-           strcpy(DISCOS[indiceDiscos].nombre,ruta);//copio la ruta del archivo
-           DISCOS[indiceDiscos].llenas=0;//le pongo llenas cero porque no tengo al momento ninguna particion
-           indiceDiscos++;
+      if(!flg && !ex){//verificar si ocupo && !ex
+
+           strcpy(DISCO.DISCOSS[DISCO.indicador].nombre,ruta);//copio la ruta del archivo
+           DISCO.DISCOSS[DISCO.indicador].llenas=0;//le pongo llenas cero porque no tengo al momento ninguna particion
+           DISCO.DISCOSS[DISCO.indicador].id=(DISCO.indicador+1);//creacion de un nuevo disco el indice me va a servir despues
+           DISCO.indicador++;
+           fseek(disca,0,SEEK_SET);
+           fwrite(&DISCO,sizeof(MasterDisk),1,disca);
+           //fclose(archivo);
+           fclose(disca);
+           recursiva=true;
            buildPartition(ruta,nombre);//recurro otra vez al metodo pero ya con
        }
-    }else
+      if(!recursiva && !ex ){
+          fseek(disca,0,SEEK_SET);
+          fwrite(&DISCO,sizeof(MasterDisk),1,disca);
+          fclose(disca);
+      }
+ fclose(archivo);//ciero el archivo para evitar errores
+ if(ex)
+     printf("Error al montar la particion: %s no ha sido creada!\n",nombre);
+    }
+    else
         printf("Error en la ruta del archivo o Disco no existe! %s",ruta);
 }
 

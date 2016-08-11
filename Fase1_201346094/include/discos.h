@@ -37,13 +37,17 @@ typedef struct ExtendedBootRecord{
     char part_name[16] ; //Nombre de la partición
 }EBR;
 
-
 typedef struct disk{
-    char nombre[20];
+    char nombre[200];
     int id;
     char *particiones[27];
     int llenas;
 }MDD;
+
+typedef struct ManejadorDisk{
+    MDD DISCOSS[27];
+    int indicador;
+}MasterDisk;
 
 typedef struct Vacio{
     char espacio[1024];
