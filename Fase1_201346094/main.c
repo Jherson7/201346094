@@ -34,7 +34,9 @@ int main()
  if(ff){
    printf("Creado manejador de Discos!\n")  ;
  }
- else{
+ else{int i;
+
+
      ff=fopen("/home/jherson/Escritorio/fa/manager.dsk","ab");
      MasterDisk tmp;
      tmp.indicador=1;
@@ -62,6 +64,7 @@ int n=0;
         while(ciclo){
 
             fgets(comandoAux,200,stdin);
+
             int t;
             for(t=0;t<200;t++){
                 if(comandoAux[t+1]=='\n'){
@@ -82,35 +85,36 @@ int n=0;
       //strcpy(comando,"Mkdisk -size::10 -path::\"/home/jherson/Escritorio/fa/\" -name::\"jh.dsk\" +unit::M");
      // strcpy(comando,"fdisk -size::2 +type::L +unit::M +fit::BF -path::\"/home/jherson/Escritorio/fa/jh.dsk\" -name::\"Particion1\"");
         //strcpy(comando,"mount -path::\"/home/jherson/Escritorio/fa/disco1.dsk\" -name::\"particion1\"");
-       // strcpy(comando,"unmount -id1::vda1");
+      strcpy(comando,"exec \"/home/jherson/Escritorio/fa/calificaciones.sh\"");
         int o;
         char *primerComando=malloc(sizeof(10));
         for(o=0;o<800;o++){
             if(comando[o]==45||comando[o]==32||comando[o]==43|| comando[o]=='\n'){
                 primerComando[o]='\0';
-                if(strcmp(primerComando,"Mkdisk")==0||strcmp(primerComando,"mkdisk")==0){
+
+                if(strcasecmp(primerComando,"Mkdisk")==0||strcasecmp(primerComando,"mkdisk")==0){
                     crearDisco(comando,o);
                     break;
-                }else if(strcmp(primerComando,"Rmdisk")==0||strcmp(primerComando,"rmDisk")==0){
+                }else if(strcasecmp(primerComando,"rmdisk")==0||strcasecmp(primerComando,"rmDisk")==0){
                         deleteDisk(comando,o);
                         break;
                }
-                else if(strcmp(primerComando,"fdisk")==0||strcmp(primerComando,"fDisk")==0){
+                else if(strcasecmp(primerComando,"fdisk")==0||strcasecmp(primerComando,"fDisk")==0){
                            comandoFseek(comando,o);;
                             break;
                 }
-                else if(strcmp(primerComando,"mount")==0||strcmp(primerComando,"mount")==0){
+                else if(strcasecmp(primerComando,"mount")==0||strcasecmp(primerComando,"mount")==0){
                     montarParticion(comando,o);;
                        break;
-                } else if(strcmp(primerComando,"unmount")==0||strcmp(primerComando,"unMount")==0){
+                } else if(strcasecmp(primerComando,"unmount")==0||strcasecmp(primerComando,"unMount")==0){
                     desmontar(comando,o);;
 
                     break;
                 }
-                else if(strcmp(primerComando,"exec")==0||strcmp(primerComando,"mount")==0){
+                else if(strcasecmp(primerComando,"exec")==0||strcasecmp(primerComando,"mount")==0){
                     comandoExect(comando,o);
                        break;
-                }  else if(strcmp(primerComando,"rep")==0||strcmp(primerComando,"Rep")==0){
+                }  else if(strcasecmp(primerComando,"rep")==0||strcasecmp(primerComando,"Rep")==0){
                     Reportes(comando,o);
                        break;
                 }
@@ -176,7 +180,7 @@ void desmontar(char token[], int posIni){
                            int noParticion=atoi(tam);
                            if(noParticion>0){
                                if(temporal.DISCOSS[v].llenas>0){
-                                   if(strcmp(temporal.DISCOSS[v].particion[noParticion-1].nombre,"")!=0){//ver si le tengo que restar el uno
+                                   if(strcasecmp(temporal.DISCOSS[v].particion[noParticion-1].nombre,"")!=0){//ver si le tengo que restar el uno
                                        strcpy(temporal.DISCOSS[v].particion[noParticion-1].nombre,"\0");
                                        temporal.DISCOSS[v].llenas--;
                                        disca=fopen("/home/jherson/Escritorio/fa/manager.dsk","rb+");
@@ -208,21 +212,27 @@ void desmontar(char token[], int posIni){
 void comandoExect(char token[], int posIni){
     int copi=0;
     char ruta[100];
-    for(;posIni<200|| token[posIni]!='\0'|| token[posIni]!='\n';posIni++){
+    for(;posIni<200&& token[posIni]!='\0'&& token[posIni]!='\n';posIni++){
         copi=0;
-        if(token[posIni]=='/')
+        if(token[posIni]=='\"')
         {
             for(;posIni<200;posIni++,copi++){
-                if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]=='\n')||(token[posIni]=='\0'))
+                if((token[posIni]=='-')||(token[posIni]==32)||(token[posIni]=='\n')||(token[posIni]=='\0'))
                     break;
                 else
                     ruta[copi]=token[posIni];
             }
             ruta[copi]='\0';
+            char jj[200];
+            int va=1;
+            for(;ruta[va]!='\"';va++)
+                jj[va-1]=ruta[va];
+
+
             //-------------- aqui viene lo feo,
             FILE *archivo;
             char caracteres[200];
-            archivo = fopen(ruta,"r");
+            archivo = fopen(jj,"r");
             if (archivo == NULL)
                 printf("Error archivo no encontrado!\n");
             else{
@@ -246,6 +256,7 @@ void comandoExect(char token[], int posIni){
                                     }else{
                                         caracteres[v+1]='\0';
                                         strcat(comando,caracteres);
+                                        printf("Comando::%s\n",comando);
                                         aja=false;
                                         break;
                                     }
@@ -264,6 +275,8 @@ void comandoExect(char token[], int posIni){
 }
 
 void crearDisco(char token[200],int posIni){
+    char bueno[100];
+    strcpy(bueno,token);
     char *ins=malloc(sizeof(20));
     bool pat=false,nom=false,unin=false;
     int copi;
@@ -273,7 +286,7 @@ void crearDisco(char token[200],int posIni){
     char tama[200]={0};
     int unit=1;
     char ext[4]={0};
-    for(copi=0;posIni<800|| token[posIni]!='\0';posIni++){
+    for(copi=0;posIni<800 && token[posIni]!='\0' && token[posIni]!='\n';posIni++){
         if(token[posIni]=='-'||token[posIni]=='+')
         {
             posIni++;//aumento la variable para comenzar a copiar el comando
@@ -283,36 +296,46 @@ void crearDisco(char token[200],int posIni){
                 posIni++;
             }
             ins[copi]='\0';//limito el caracter para poder compararlo
-            if((strcmp(ins,"size")==0)||(strcmp(ins,"Size")==0)){
+            if((strcasecmp(ins,"size")==0)||(strcasecmp(ins,"Size")==0)){
                 posIni+=2;
                 copi=0;//para volver a copiar otro char desde cero
+                if(token[posIni]=='-')
+                    printf("Error en tamanio size! valor negativo\n");
+                else{
+                    for(;posIni<800;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)){
+                            break;
+                        }
 
-                for(;posIni<800;posIni++,copi++){
-                    if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)){
-                        break;
+                        tama[copi]=token[posIni];
                     }
-
-                    tama[copi]=token[posIni];
+                    tama[copi]='\0';
+                    tam =atoi(tama);//conversion a int del tamanio del disco
+                    posIni--;
+                    copi=0;
                 }
-                tama[copi]='\0';
-                tam =atoi(tama);//conversion a int del tamanio del disco
-                posIni--;
-                copi=0;
-            }else if(strcmp(ins,"path")==0||strcmp(ins,"Path")==0){
+
+            }else if(strcasecmp(ins,"path")==0||strcasecmp(ins,"Path")==0){
                 posIni+=2;
                 copi=0;
-                path[copi]='"';
+                if(token[posIni]!='"'){
+                    printf("Error el nombre debe venir dentro de comillas");
+                    break;
+                }
+                ruta[0]='\'';
+                copi++;
+                posIni++;
                 for(;posIni<800;posIni++,copi++){
-                    if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)){
+                    if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]=='\"')||(token[posIni]=='\n')){
                         break;
                     }
                     ruta[copi]=token[posIni];
                 }
-                path[copi]='\0';
+                ruta[copi]='\"';
                 pat=true;
                 copi=0;
             }
-            else if(strcmp(ins,"name")==0||strcmp(ins,"Name")==0){
+            else if(strcasecmp(ins,"name")==0||strcasecmp(ins,"Name")==0){
                 posIni+=2;
                 copi=0;
                 if(token[posIni]!='"'){
@@ -329,14 +352,14 @@ void crearDisco(char token[200],int posIni){
                 copi=0;
 
                 for(;posIni<800;posIni++,copi++){
-                    if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=='\0')||(token[posIni]=='"')){
+                    if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]=='\0')||(token[posIni]=='"')){
                         break;
                     }
                     ext[copi]=token[posIni];
                 }
 
                 ext[copi]='\0';
-                if(strcmp(ext,"dsk")==0){
+                if(strcasecmp(ext,"dsk")==0){
                     strcat(nombre,".");
                     strcat(nombre,ext);
                     nom=true;
@@ -348,16 +371,16 @@ void crearDisco(char token[200],int posIni){
                 posIni++;
                 copi=0;
             }
-            else if(strcmp(ins,"unit")==0||strcmp(ins,"Unit")==0){
+            else if(strcasecmp(ins,"unit")==0||strcasecmp(ins,"Unit")==0){
                 char otro[90];
                 int h;
                 for(h=0;h<90;h++)
                     otro[h]=token[h];
                 posIni+=2;
-                if(token[posIni]=='M'){
+                if(token[posIni]=='M'||token[posIni]=='m'){
                     unit=1;
                     unin=true;
-                }else if(token[posIni]=='K'){
+                }else if(token[posIni]=='K'||token[posIni]=='k'){
                     unit=2;
                     unin=true;
                 }
@@ -390,6 +413,13 @@ void crearDisco(char token[200],int posIni){
 void buildDisk(char *nombre, char *ruta, int tam, int unidad){
 
     char directory[200]={0};
+    int i;
+    for(i=0;ruta[i];i++)
+    {
+        if(ruta[i]=='\"')
+            ruta[i]='\'';
+    }
+
     strcpy(directory,"mkdir -p ");
     strcat(directory,ruta);
 
@@ -409,21 +439,20 @@ void buildDisk(char *nombre, char *ruta, int tam, int unidad){
         strftime(output,19,"%d/%m/%y %H:%M:%S",tlocal);
         //termina creacion de tiempo
         //inicio a quitarles las comillas a la ruta para poder crear el archivo-------------------
+//        int k;
+//        int v=0;
+//        for(k=1;ruta[k]!='"';k++){
+//            v++;
+//        }
+//        v++;
+//        ruta[v++]='\0';
         int k;
-        int v=0;
-        for(k=1;ruta[k]!='"';k++){
-            v++;
-        }
-        v++;
-        ruta[v++]='\0';
-        strcat(ruta,nombre);
-        char *nueva=(char*)malloc(200);
-        for(k=1;ruta[k]!='\0';k++){
+        char nueva[200]={0};
+        ruta[0]='\"';
+        for(k=1;ruta[k]!='\'';k++){
             nueva[k-1]=ruta[k];
         }
-        strcat(nueva,"\0");
-        //termino de copiar la ruta sin comillas-------------------------
-
+        strcat(nueva,nombre);
         MasterBR temp;
 
         //        if(unidad==2){//por si el tamanio es en Kilobytes
@@ -434,58 +463,58 @@ void buildDisk(char *nombre, char *ruta, int tam, int unidad){
         //        }
 
         //-------------creacion del disco
+        fichero=fopen(nueva,"r+");
+        if(fichero==NULL){
+          //fclose(fichero);
+            fichero = fopen(nueva, "ab");
+            if(fichero){
+                //vamos a copiar los parametros a MBR
+                strcpy(temp.mbr_fecha_creacion,output);//copio la fecha de creacion al MBR
+                temp.mbr_tamanio=(tam-sizeof(temp));//le asigno el tamanio del disco restando el tamanio del mbr
+                temp.mbr_disk_signature=1;
+                //---------------
+                basura tempBasura;
+                int j;
+                for(j=0; j<4; j++){
+                    strcpy(temp.mbr_particion_[j].part_status,"0");
+                    strcpy(temp.mbr_particion_[j].part_type,"");
+                    strcpy(temp.mbr_particion_[j].part_fit,"");
+                    temp.mbr_particion_[j].part_start=0;
+                    temp.mbr_particion_[j].part_size=0;
+                    strcpy(temp.mbr_particion_[j].part_name,"");
+                    temp.mbr_particion_[j].part_id=j+1;
+                }
+                fseek(fichero,0,SEEK_SET);
+                fwrite(&temp,sizeof(MasterBR),1,fichero);
+                //---------------
+                int i;
+                tam=(tam-sizeof(MasterBR))/sizeof(basura);
+                for(i=0; i< tam; i++){
+                    fseek(fichero,0,SEEK_END);
+                    strcpy(tempBasura.espacio,"");
+                    fwrite(&tempBasura,sizeof(basura),1,fichero);
+                    fflush(fichero);
+                }
 
-        fichero = fopen(nueva, "ab");
-        //vamos a copiar los parametros a MBR
-        strcpy(temp.mbr_fecha_creacion,output);//copio la fecha de creacion al MBR
-        temp.mbr_tamanio=(tam-sizeof(temp));//le asigno el tamanio del disco restando el tamanio del mbr
-        temp.mbr_disk_signature=1;
-        //---------------
-        basura tempBasura;
-        int j;
-        for(j=0; j<4; j++){
-            strcpy(temp.mbr_particion_[j].part_status,"0");
-            strcpy(temp.mbr_particion_[j].part_type,"");
-            strcpy(temp.mbr_particion_[j].part_fit,"");
-            temp.mbr_particion_[j].part_start=0;
-            temp.mbr_particion_[j].part_size=0;
-            strcpy(temp.mbr_particion_[j].part_name,"");
-            temp.mbr_particion_[j].part_id=j+1;
-        }
-        fseek(fichero,0,SEEK_SET);
-        fwrite(&temp,sizeof(MasterBR),1,fichero);
-        //---------------
-        int i;
-        tam=(tam-sizeof(MasterBR))/sizeof(basura);
-        for(i=0; i< tam; i++){
-            fseek(fichero,0,SEEK_END);
-            strcpy(tempBasura.espacio,"");
-            fwrite(&tempBasura,sizeof(basura),1,fichero);
-            fflush(fichero);
+                fclose(fichero);
+                fichero = fopen(nueva, "r");
+                fseek(fichero,0,SEEK_SET);
+                MasterBR tempMBR;
+                fread(&tempMBR,sizeof(MasterBR),1,fichero);
+                printf("Informacion del disco:\nTamanio: %d\nFecha Creacion: %s\n",tempMBR.mbr_tamanio,tempMBR.mbr_fecha_creacion);
+                fclose(fichero);
+
+            }
+            else{
+                printf("no se puede Escribir el disco %s\n",ruta);
+            }
+        }else{
+            printf("Error el disco ya ha sido creado!ERROR!::%s\n",nombre);
         }
 
-        fclose(fichero);
-        fichero = fopen(nueva, "r");
-        fseek(fichero,0,SEEK_SET);
-        MasterBR tempMBR;
-        fread(&tempMBR,sizeof(MasterBR),1,fichero);
-        printf("Informacion del disco:\nTamanio: %d\nFecha Creacion: %s\n",tempMBR.mbr_tamanio,tempMBR.mbr_fecha_creacion);
-        fclose(fichero);
+
     }
-    /*
-                               int p= mkdir(ruta, 0777);
-                               if(p<0){
-                                   printf("Error en la ruta de directorio: %s porfavor intente de nuevo\n",ruta);
-                                   return;
-                               }
-                                   char cero='0';
-                                   for(v=0;v<tam*1024*1024;v++){
-                                      fseek(fichero,0,SEEK_END);
-                                      fputc('0',fichero);
-                                      fflush(fichero);
-                                   }
-                                   fclose(fichero)
-                           */
+
 }
 
 
@@ -503,7 +532,7 @@ void deleteDisk(char *token, int indice){
                 copi++;
                 indice++;
             }
-            if(strcmp(ins,"path")==0||strcmp(ins,"path")==0){
+            if(strcasecmp(ins,"path")==0||strcasecmp(ins,"path")==0){
                 indice+=3;
                 copi=0;
                 while(token[indice]!='"'){//ciclo hasta que encuentro '"' para sacar su ruta
@@ -521,13 +550,20 @@ void deleteDisk(char *token, int indice){
     }
 
     if(flag){
-        int r=remove(ruta);
-        if(r==0){
-            printf("Eliminacion correcta de disco\n");
-        }
-        else{
-            printf("Error al Eliminar el Disco: %s probablemente no exista el disco!\n",ruta);
-        }
+        printf("\nEsta seguro de Eliminar el Disco?:(S:N)\n");
+        char res[2];
+        fgets(&res,2,stdin);
+        if(strcasecmp(res,"s")==0){
+            int r=remove(ruta);
+            if(r==0){
+                printf("Eliminacion correcta de disco\n");
+            }
+            else{
+                printf("Error al Eliminar el Disco: %s probablemente no exista el disco!\n",ruta);
+            }
+        }else
+            printf("Se cancelo eliminacion del disco");
+
     }
 }
 
@@ -566,7 +602,7 @@ void comandoFseek(char *token, int posIni){
             ins[copi]='\0';//limito el caracter para poder compararlo
 
             //***--------------comienza la obtencion de size*******-------------
-            if((strcmp(ins,"size")==0)||(strcmp(ins,"Size")==0)){
+            if((strcasecmp(ins,"size")==0)||(strcasecmp(ins,"Size")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -592,7 +628,7 @@ void comandoFseek(char *token, int posIni){
                 }
             }//---**********-termina la obtencion de size--------------------
             //------------comienza la obtencion del path****-------------------
-            else if((strcmp(ins,"path")==0)||(strcmp(ins,"Path")==0)){
+            else if((strcasecmp(ins,"path")==0)||(strcasecmp(ins,"Path")==0)){
                 bool ff=false;
                 if(token[posIni]==':'&&token[posIni+1]==':'&&token[posIni+2]=='"'){
                     posIni+=3;
@@ -620,7 +656,7 @@ void comandoFseek(char *token, int posIni){
             //-**********/--termina la obtencion del path**--------------
 
             //----******comienza la obtencion del name***------------
-            else if((strcmp(ins,"name")==0)||(strcmp(ins,"Name")==0)){
+            else if((strcasecmp(ins,"name")==0)||(strcasecmp(ins,"Name")==0)){
                 bool ff=false;
                 if(token[posIni]==':'&&token[posIni+1]==':'&&token[posIni+2]=='"'){
                     posIni+=3;
@@ -647,7 +683,7 @@ void comandoFseek(char *token, int posIni){
             }
             //---------**termina la obtencion del name***------------
             //********----------------comienza la obtencion del unit**-----------------
-            else if((strcmp(ins,"unit")==0)||(strcmp(ins,"Unit")==0)){
+            else if((strcasecmp(ins,"unit")==0)||(strcasecmp(ins,"Unit")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -658,10 +694,10 @@ void comandoFseek(char *token, int posIni){
                         unidad[copi]=token[posIni];
                     }
                     unidad[copi]='\0';
-                    if(unidad[0]=='M'||unidad[0]=='B'||unidad[0]=='K'){
-                        if(unidad[0]=='B')
+                    if(unidad[0]=='m'||unidad[0]=='M'||unidad[0]=='B'||unidad[0]=='b'||unidad[0]=='K'||unidad[0]=='k'){
+                        if(unidad[0]=='B'||unidad[0]=='b')
                             kb=1;
-                        else if(unidad[0]=='M')
+                        else if(unidad[0]=='M'||unidad[0]=='m')
                             kb=1024*1024;
                         else
                             kb=1024;
@@ -676,7 +712,7 @@ void comandoFseek(char *token, int posIni){
             }
             //*********-------termina la obtencion del unit**-------------------
             //----------inicia la obtencion del type**----------------------
-            else if((strcmp(ins,"type")==0)||(strcmp(ins,"type")==0)){
+            else if((strcasecmp(ins,"type")==0)||(strcasecmp(ins,"Type")==0)){
                 if(token[posIni]==58 && token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -687,10 +723,10 @@ void comandoFseek(char *token, int posIni){
                         tipo[copi]=token[posIni];
                     }
                     tipo[copi]='\0';
-                    if(tipo[0]=='E'||tipo[0]=='P'||tipo[0]=='L'){
-                        if(tipo[0]=='E')
+                    if(tipo[0]=='e'||tipo[0]=='E'||tipo[0]=='P'||tipo[0]=='p'||tipo[0]=='L'||tipo[0]=='l'){
+                        if(tipo[0]=='E'||tipo[0]=='e')
                             tipoAjuste=2;
-                        else if(tipo[0]=='P')
+                        else if(tipo[0]=='P'||tipo[0]=='p')
                             tipoAjuste=1;
                         else
                             tipoAjuste=3;
@@ -706,7 +742,7 @@ void comandoFseek(char *token, int posIni){
             }
             //*****-*-*-*-* termina la obtencion del type*-*-*-*-*-
             //--------INICIA OBTENCION DEL FIT**------------
-            else if((strcmp(ins,"fit")==0)||(strcmp(ins,"Fit")==0)){
+            else if((strcasecmp(ins,"fit")==0)||(strcasecmp(ins,"Fit")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -717,10 +753,10 @@ void comandoFseek(char *token, int posIni){
                         ajuste[copi]=token[posIni];
                     }
                     ajuste[copi]='\0';
-                    if(strcmp(ajuste,"BF")==0||strcmp(ajuste,"MF")==0||strcmp(ajuste,"WF")==0){
-                        if(strcmp(ajuste,"BF")==0)
+                    if(strcasecmp(ajuste,"bf")==0||strcasecmp(ajuste,"mf")==0||strcasecmp(ajuste,"wf")==0){
+                        if(strcasecmp(ajuste,"BF")==0)
                             tipoUnidad=1;
-                        else if(strcmp(ajuste,"MF")==0)
+                        else if(strcasecmp(ajuste,"MF")==0)
                             tipoUnidad=2;
                         else
                             tipoUnidad=3;
@@ -733,7 +769,7 @@ void comandoFseek(char *token, int posIni){
             }
             //---------- TERMINA OBTENCION DEL FIT...=-=-=-=-=
             //--------- INICIA la obtencion del DELETE*-*-*-*-*-*-*
-            else if((strcmp(ins,"delete")==0)||(strcmp(ins,"Delete")==0)){
+            else if((strcasecmp(ins,"delete")==0)||(strcasecmp(ins,"Delete")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -745,7 +781,7 @@ void comandoFseek(char *token, int posIni){
                     }
                     delet[copi]='\0';
                     if(delet=="Fast"||delet=="Full"||delet=="fast"||delet=="full"){
-                        if(strcmp(delet,"Fast")==0||strcmp(delet,"fast")==0)
+                        if(strcasecmp(delet,"Fast")==0||strcasecmp(delet,"fast")==0)
                             tipoEliminacion=1;
                         else
                             tipoEliminacion=2;
@@ -760,7 +796,7 @@ void comandoFseek(char *token, int posIni){
             }
             //*-*-*-*-*-* TERMINA LA OBTENCION DEL DELETE/-*-*-/-/--*-
             //***-*-*-*INICIA LA OBTENCION DEL ADD/-/-/-/-/-/-/-/-/
-            else if((strcmp(ins,"add")==0)||(strcmp(ins,"Add")==0)){
+            else if((strcasecmp(ins,"add")==0)||(strcasecmp(ins,"Add")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -840,8 +876,8 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
         else if(tipoAjuste==2){
             int p=0;
             for(k=0;k<4;k++){
-                if(strcmp(temporal.mbr_particion_[k].part_name,"")!=0){
-                    if(strcmp(temporal.mbr_particion_[k].part_type,"E")==0){
+                if(strcasecmp(temporal.mbr_particion_[k].part_name,"")!=0){
+                    if(strcasecmp(temporal.mbr_particion_[k].part_type,"E")==0){
                         p=1;break;
                     }
                 }
@@ -888,8 +924,8 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
         else{//dejare en estan by
             int p=0;
             for(k=0;k<4;k++){
-                if(strcmp(temporal.mbr_particion_[k].part_name,"")!=0){
-                    if(strcmp(temporal.mbr_particion_[k].part_type,"E")==0){
+                if(strcasecmp(temporal.mbr_particion_[k].part_name,"")!=0){
+                    if(strcasecmp(temporal.mbr_particion_[k].part_type,"E")==0){
                         bool aja=true;//variable para recorrer mis EBR
                         bool nom=true;//variable para ver si no existe ya el nombre
                         //*-*-*
@@ -900,7 +936,7 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
                         //aqui debo hacer un algoritmo para verificar que no exista el nombre de la particion
 
                         while(nom){
-                            if(strcmp(tmp.part_name,nombre)==0){
+                            if(strcasecmp(tmp.part_name,nombre)==0){
                                 aja=false;
                                 nom=false;
                             }else{
@@ -1028,7 +1064,7 @@ void eliminarParticion(char ruta[], char nombre[], int tipo){
         int k;
         int indice=sizeof(MasterBR);
         for(k=0;k<4;k++){
-            if(strcmp(temporal.mbr_particion_[k].part_name,nombre)==0){
+            if(strcasecmp(temporal.mbr_particion_[k].part_name,nombre)==0){
 
                 if(tipo==1){
                     strcpy(temporal.mbr_particion_[k].part_status,"0");
@@ -1055,8 +1091,8 @@ void eliminarParticion(char ruta[], char nombre[], int tipo){
         }
         //-*-*-*-*-
         for(k=0;k<4;k++){
-            if(strcmp(temporal.mbr_particion_[k].part_name,"")!=0){
-                if(strcmp(temporal.mbr_particion_[k].part_type,"E")==0){
+            if(strcasecmp(temporal.mbr_particion_[k].part_name,"")!=0){
+                if(strcasecmp(temporal.mbr_particion_[k].part_type,"E")==0){
                     bool nom=true;//variable para ver si no existe ya el nombre
                     //*-*-*
                     EBR tmp;
@@ -1066,7 +1102,7 @@ void eliminarParticion(char ruta[], char nombre[], int tipo){
                     //aqui debo hacer un algoritmo para verificar que exista el nombre de la particion
 
                     while(nom){
-                        if(strcmp(tmp.part_name,nombre)==0){
+                        if(strcasecmp(tmp.part_name,nombre)==0){
                             nom=false;
                             if(tmp.part_next==-1){//es por que es la primera o
                                 strcpy(tmp.part_fit,"");
@@ -1161,7 +1197,7 @@ void montarParticion(char token[200], int posIni){
     char mounts[50];
     for(copi=0;copi<50&&token[copi]!='\n';copi++)
         mounts[copi]=token[copi];
-    if(strcmp(mounts,"mount")==0){
+    if(strcasecmp(mounts,"mount")==0){
         FILE *archivo;
             archivo=fopen("/home/jherson/Escritorio/fa/manager.dsk","r+");
             MasterDisk temp;
@@ -1173,7 +1209,7 @@ void montarParticion(char token[200], int posIni){
                 if(temp.DISCOSS[copi].llenas>0){
                     int r=0;
                     for(;r<26;r++){
-                        if(strcmp(temp.DISCOSS[copi].particion[r].nombre,"")!=0)
+                        if(strcasecmp(temp.DISCOSS[copi].particion[r].nombre,"")!=0)
                             printf("#id::vd%c%d -path::%s -name::%s\n",abecedario[copi]
                                     ,r+1,temp.DISCOSS[copi].nombre,temp.DISCOSS[copi].particion[r].nombre);
                     }
@@ -1194,7 +1230,7 @@ void montarParticion(char token[200], int posIni){
                 ins[copi]='\0';//limito el caracter para poder compararlo
 
                 //------------comienza la obtencion del path****-------------------
-                if((strcmp(ins,"path")==0)||(strcmp(ins,"Path")==0)){
+                if((strcasecmp(ins,"path")==0)||(strcasecmp(ins,"Path")==0)){
                     bool ff=false;
                     if(token[posIni]==':'&&token[posIni+1]==':'&&token[posIni+2]=='"'){
                         char *abecedario[27]= {"\0","a","b","c","d","e","f","g","h","i","j","k","l","m",
@@ -1223,7 +1259,7 @@ void montarParticion(char token[200], int posIni){
                 //-**********/--termina la obtencion del path**--------------
 
                 //----******comienza la obtencion del name***------------
-                else if((strcmp(ins,"name")==0)||(strcmp(ins,"Name")==0)){
+                else if((strcasecmp(ins,"name")==0)||(strcasecmp(ins,"Name")==0)){
                     bool ff=false;
                     if(token[posIni]==':'&&token[posIni+1]==':'&&token[posIni+2]=='"'){
                         posIni+=3;
@@ -1281,8 +1317,8 @@ void buildPartition(char ruta[],char nombre[]){
         int tipo=0;
         bool ex=true;
         for(q=0;q<4;q++){
-            if(strcmp(tmp.mbr_particion_[q].part_name,nombre)==0){
-                if(strcmp(tmp.mbr_particion_[q].part_type,"E")!=0){//verifico que no sea una particion extendida
+            if(strcasecmp(tmp.mbr_particion_[q].part_name,nombre)==0){
+                if(strcasecmp(tmp.mbr_particion_[q].part_type,"E")!=0){//verifico que no sea una particion extendida
                     tipo=1;
                     ex=false;
                     break;
@@ -1291,13 +1327,13 @@ void buildPartition(char ruta[],char nombre[]){
         }
         if(ex){
             for(k=0;k<4;k++){
-                if(strcmp(tmp.mbr_particion_[k].part_type,"E")==0){
+                if(strcasecmp(tmp.mbr_particion_[k].part_type,"E")==0){
                     EBR tmpE;
                     fseek(archivo,tmp.mbr_particion_[k].part_start,SEEK_SET);
                     fread(&tmpE,sizeof(EBR),1,archivo);
                     bool aja=true;
                     while(aja){
-                        if(strcmp(tmpE.part_name,nombre)==0){
+                        if(strcasecmp(tmpE.part_name,nombre)==0){
                             aja=false;
                             ex=false;
                         }else{
@@ -1318,7 +1354,7 @@ void buildPartition(char ruta[],char nombre[]){
         if(!ex ){//si existe la particion es primaria || logica
             for(k=1;k<27;k++){
                 if(DISCO.DISCOSS[k].id!=0){//pregunta si el id es distinto de cero pero al principio es cero???
-                    if(strcmp(DISCO.DISCOSS[k].nombre,ruta)==0){
+                    if(strcasecmp(DISCO.DISCOSS[k].nombre,ruta)==0){
                         flg=true;
                         if(DISCO.DISCOSS[k].llenas==0){//esto es para la primera particion del Disco sda1
                             //   DISCO.DISCOSS[k].particiones[DISCO.DISCOSS[k].llenas]=malloc(sizeof(nombre+1));
@@ -1329,7 +1365,7 @@ void buildPartition(char ruta[],char nombre[]){
                             int r;
                             hay=true;
                             for(r=0;r<DISCO.DISCOSS[k].llenas;r++){//aqui voy a verificar que no haya montado esa particion
-                                if(strcmp(DISCO.DISCOSS[k].particion[r].nombre,nombre)==0){
+                                if(strcasecmp(DISCO.DISCOSS[k].particion[r].nombre,nombre)==0){
                                     hay=false;
                                     printf("Ya se monto esa particion! ERROR!:: %s\n",nombre);
                                     break;
@@ -1382,38 +1418,45 @@ void buildPartition(char ruta[],char nombre[]){
 void ejecutarComandos(char comando[]){
     //*-*-*-*-*-*-*-*-*
     int o;
-    char *primerComando=(char*)malloc(sizeof(10));
-    for(o=0;o<30;o++){
-        if(comando[o]==45||comando[o]==32|| comando[o]==43){
+    char primerComando[10];
+    for(o=0;o<800&&comando[o]!='\0'&&comando[o]!='\n'&&comando[o]!='\r';o++){
+        if(comando[o]==45||comando[o]==32||comando[o]==43|| comando[o]=='\n'){
             primerComando[o]='\0';
-            if(strcmp(primerComando,"Mkdisk")==0||strcmp(primerComando,"mkdisk")==0||strcmp(primerComando,"mkDisk")==0){
+
+            if(strcasecmp(primerComando,"Mkdisk")==0||strcasecmp(primerComando,"mkdisk")==0){
                 crearDisco(comando,o);
                 break;
-            }else if(strcmp(primerComando,"Rmdisk")==0||strcmp(primerComando,"rmDisk")==0){
-                deleteDisk(comando,o);
-                break;
+            }else if(strcasecmp(primerComando,"rmdisk")==0||strcasecmp(primerComando,"rmDisk")==0){
+                    deleteDisk(comando,o);
+                    break;
+           }
+            else if(strcasecmp(primerComando,"fdisk")==0||strcasecmp(primerComando,"fDisk")==0){
+                       comandoFseek(comando,o);;
+                        break;
             }
-            else if(strcmp(primerComando,"fdisk")==0||strcmp(primerComando,"fDisk")==0){
-                comandoFseek(comando,o);;
-                break;
-            }
-            else if(strcmp(primerComando,"mount")==0||strcmp(primerComando,"mount")==0){
+            else if(strcasecmp(primerComando,"mount")==0||strcasecmp(primerComando,"mount")==0){
                 montarParticion(comando,o);;
+                   break;
+            } else if(strcasecmp(primerComando,"unmount")==0||strcasecmp(primerComando,"unMount")==0){
+                desmontar(comando,o);;
+
                 break;
             }
-            else if(strcmp(primerComando,"exec")==0||strcmp(primerComando,"mount")==0){
-                comandoExect(comando,o);;
-                break;
+            else if(strcasecmp(primerComando,"exec")==0||strcasecmp(primerComando,"mount")==0){
+                comandoExect(comando,o);
+                   break;
+            }  else if(strcasecmp(primerComando,"rep")==0||strcasecmp(primerComando,"Rep")==0){
+                Reportes(comando,o);
+                   break;
             }
             else{
                 printf("Error comando no reconocido!\n");
                 break;
-            }
+           }
         }else{
-            primerComando[o]=comando[o];
+          primerComando[o]=comando[o];
         }
     }
-    //-*-*-*-*-*-*-*-*-
 
 }
 
@@ -1446,7 +1489,7 @@ void Reportes(char token[], int posIni){
             }
             ins[copi]='\0';//limito el caracter para poder compararlo
             //------------comienza la obtencion del path****-------------------
-            if((strcmp(ins,"path")==0)||(strcmp(ins,"Path")==0)){
+            if((strcasecmp(ins,"path")==0)||(strcasecmp(ins,"Path")==0)){
                 bool ff=false;
                 if(token[posIni]==':'&&token[posIni+1]==':'&&token[posIni+2]=='"'){
                     posIni+=3;
@@ -1474,7 +1517,7 @@ void Reportes(char token[], int posIni){
             //-**********/--termina la obtencion del path**--------------
 
             //----******comienza la obtencion del name***------------
-            else if((strcmp(ins,"name")==0)||(strcmp(ins,"Name")==0)){
+            else if((strcasecmp(ins,"name")==0)||(strcasecmp(ins,"Name")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -1489,7 +1532,7 @@ void Reportes(char token[], int posIni){
                 }
             }
             //---------**termina la obtencion del name***------------
-            else if((strcmp(ins,"id")==0)||(strcmp(ins,"Id")==0)){
+            else if((strcasecmp(ins,"id")==0)||(strcasecmp(ins,"Id")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
@@ -1517,7 +1560,7 @@ void Reportes(char token[], int posIni){
                             if(temporal.DISCOSS[v].llenas>0){
                                 id=v;
                                 ser=true;
-                                /*if(strcmp(temporal.DISCOSS[v].particion[noParticion-1].nombre,"")!=0){//ver si le tengo que restar el uno
+                                /*if(strcasecmp(temporal.DISCOSS[v].particion[noParticion-1].nombre,"")!=0){//ver si le tengo que restar el uno
                                     strcpy(temporal.DISCOSS[v].particion[noParticion-1].nombre,"\0");
                                     temporal.DISCOSS[v].llenas--;
                                     disca=fopen("/home/jherson/Escritorio/fa/manager.dsk","rb+");
@@ -1577,7 +1620,7 @@ void Reportes(char token[], int posIni){
 
         FILE *grafo =fopen("/home/jherson/Escritorio/disco.dot","w+");
 
-        if(strcmp(nombre,"mbr")==0){
+        if(strcasecmp(nombre,"mbr")==0){
             FILE *grafo =fopen("/home/jherson/Escritorio/disco.dot","w+");
 
             fprintf(grafo,"digraph structura{\n");
@@ -1589,7 +1632,7 @@ void Reportes(char token[], int posIni){
 
             int t;
             for(t=0;t<4;t++){
-              if(strcmp(tmp.mbr_particion_[t].part_type,"E")==0) {
+              if(strcasecmp(tmp.mbr_particion_[t].part_type,"E")==0) {
                 fseek(rep,tmp.mbr_particion_[t].part_start,SEEK_SET);
                   fread(&tmpE,sizeof(EBR),1,rep);
                   EBR temp2;
@@ -1645,14 +1688,14 @@ void Reportes(char token[], int posIni){
             strcat(abrir,ruta);
             system(abrir);
 
-        }else if(strcmp(nombre,"disk")==0){
+        }else if(strcasecmp(nombre,"disk")==0){
             fprintf(grafo,"digraph structura{\n");
             fprintf(grafo,"node [shape=record,height=.1];\n");
             fprintf(grafo,"struct3 [shape=record,label=\"MBR");
                  int t;
                 for(t=0;t<4;t++){
                  if(tmp.mbr_particion_[t].part_size!=0){
-                    if(strcmp(tmp.mbr_particion_[t].part_type,"E")==0){
+                    if(strcasecmp(tmp.mbr_particion_[t].part_type,"E")==0){
                         fprintf(grafo,"|{Extendida|{");
                         fseek(rep,tmp.mbr_particion_[t].part_start,SEEK_SET);
                         fread(&tmpE,sizeof(EBR),1,rep);
@@ -1722,3 +1765,5 @@ void Reportes(char token[], int posIni){
         printf("Errores en la entrada de Reportes!::%s \n",token);
     }
 }
+
+
