@@ -3,7 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <stdbool.h>
-#include <discos.h>
+#include "discos.h"
 #include <unistd.h>
 
 //declaracion de prototipos de los metodos que voy a requerir
