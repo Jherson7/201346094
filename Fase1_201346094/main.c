@@ -16,6 +16,7 @@ void crearParticion(char direcion[], char nombre[], int tam, int tipoAjuste, int
 void montarParticion(char token[], int posIni);
 void eliminarParticion(char ruta[], char nombre[], int tipo);
 void comandoExect(char token[], int posIni);
+void Reportes(char token[], int posIni);
 void ejecutarComandos(char comando[]);
 void desmontar(char token[], int posIni);
 //variables globales para la creacion de disco
@@ -59,6 +60,7 @@ int n=0;
         bool ciclo=true;
         printf("Ingrese comandos a Ejecutar!\n");
         while(ciclo){
+
             fgets(comandoAux,200,stdin);
             int t;
             for(t=0;t<200;t++){
@@ -107,6 +109,9 @@ int n=0;
                 }
                 else if(strcmp(primerComando,"exec")==0||strcmp(primerComando,"mount")==0){
                     comandoExect(comando,o);
+                       break;
+                }  else if(strcmp(primerComando,"rep")==0||strcmp(primerComando,"Rep")==0){
+                    Reportes(comando,o);
                        break;
                 }
                 else{
@@ -392,7 +397,7 @@ void buildDisk(char *nombre, char *ruta, int tam, int unidad){
     if (-1 == dir_err)
     {
         printf("Error creating directory!n");
-        exit(1);
+
     }
     else{
         FILE* fichero;//archivo que simulara el disco duro
@@ -1152,6 +1157,7 @@ void montarParticion(char token[200], int posIni){
     char ins[10];
     bool way=false;
     bool nome=false;
+    bool mont=false;
     char mounts[50];
     for(copi=0;copi<50&&token[copi]!='\n';copi++)
         mounts[copi]=token[copi];
@@ -1168,10 +1174,10 @@ void montarParticion(char token[200], int posIni){
                     int r=0;
                     for(;r<26;r++){
                         if(strcmp(temp.DISCOSS[copi].particion[r].nombre,"")!=0)
-                            printf("#id::vd%c%d -path::%s -name::%s",abecedario[r+1]
+                            printf("#id::vd%c%d -path::%s -name::%s\n",abecedario[copi]
                                     ,r+1,temp.DISCOSS[copi].nombre,temp.DISCOSS[copi].particion[r].nombre);
                     }
-
+                    mont=true;
                 }
             }
     }else{
@@ -1249,8 +1255,10 @@ void montarParticion(char token[200], int posIni){
     }
     if(way&&nome)
         buildPartition(ruta,nombre);
+    else if(!mont)
+        printf("No mas particiones por mostrar!\n");
     else
-        printf("Error en el parametro MOUNT! %s\n",token);
+      printf("Error en el parametro MOUNT! %s\n",token);
 }
 void buildPartition(char ruta[],char nombre[]){
     FILE *archivo;
@@ -1371,7 +1379,6 @@ void buildPartition(char ruta[],char nombre[]){
 
 //finaliza metodo para montar particion
 
-
 void ejecutarComandos(char comando[]){
     //*-*-*-*-*-*-*-*-*
     int o;
@@ -1410,4 +1417,308 @@ void ejecutarComandos(char comando[]){
 
 }
 
+void Reportes(char token[], int posIni){
+    int copi;
+    char ruta[200]={0};
+    char nombre[20];
+    char iden[20];
+    int id;
+    bool nom=false;
+    bool way=false;
+    bool ser=false;
 
+    char ins[10];
+    FILE *disca;
+    disca=fopen("/home/jherson/Escritorio/fa/manager.dsk","rb+");
+    MasterDisk temporal;
+    fread(&temporal,sizeof(MasterDisk),1,disca);
+    usleep(200);
+    fclose(disca);
+    for(;posIni<800 && token[posIni]!='\0'&&token[posIni]!='\n';posIni++){
+        copi=0;
+        if(token[posIni]=='-')
+        {
+            posIni++;//aumento la variable para comenzar a copiar el comando
+            while(token[posIni]!=':'){//ciclo hasta que encuentro el primer : para sacar su valor
+                ins[copi]= token[posIni];
+                copi++;
+                posIni++;
+            }
+            ins[copi]='\0';//limito el caracter para poder compararlo
+            //------------comienza la obtencion del path****-------------------
+            if((strcmp(ins,"path")==0)||(strcmp(ins,"Path")==0)){
+                bool ff=false;
+                if(token[posIni]==':'&&token[posIni+1]==':'&&token[posIni+2]=='"'){
+                    posIni+=3;
+                    copi=0;
+                    for(;posIni<800;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='"')||(token[posIni]=='\0')){
+                            if(token[posIni]=='"')
+                                ff=true;
+                            else
+                                printf("Error falta \" en el path,Error\n");
+                            break;
+                        }
+                        ruta[copi]=token[posIni];
+                    }
+                    if(ff){
+                        ruta[copi]='\0'; way=true;
+                    }
+                    else
+                    {
+                        printf("error en la obtencion de -path!\n");
+                        break;
+                    }
+                }
+            }
+            //-**********/--termina la obtencion del path**--------------
+
+            //----******comienza la obtencion del name***------------
+            else if((strcmp(ins,"name")==0)||(strcmp(ins,"Name")==0)){
+                if(token[posIni]==':'&&token[posIni+1]==':'){
+                    posIni+=2;
+                    copi=0;
+                    for(;posIni<200;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='\0')||(token[posIni]=='\n')||(token[posIni]==32)){
+                          break;
+                        }
+                        nombre[copi]=token[posIni];
+                    }
+                 nombre[copi]='\0';
+                 nom=true;
+                }
+            }
+            //---------**termina la obtencion del name***------------
+            else if((strcmp(ins,"id")==0)||(strcmp(ins,"Id")==0)){
+                if(token[posIni]==':'&&token[posIni+1]==':'){
+                    posIni+=2;
+                    copi=0;
+                    for(;posIni<50;posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='\0')||(token[posIni]=='n')||(token[posIni]==32)){
+                            break;
+                        }
+                        iden[copi]=token[posIni];
+                    }
+                    iden[copi]='\0'; nom=true;
+                    if(iden[0]=='v' && iden[1]=='d'){
+                        int v;
+                        for(v=0;v<27;v++){
+                            if(iden[2]==abecedario[v])
+                                break;
+                        }
+
+                        char tam[2];
+                        int h;
+                        for(h=3;h<5&&iden[h]!='\0';h++)
+                            tam[h-3]=iden[h];
+                        tam[h-3]='\0';
+                        int noParticion=atoi(tam);
+                        if(noParticion>0){
+                            if(temporal.DISCOSS[v].llenas>0){
+                                id=v;
+                                ser=true;
+                                /*if(strcmp(temporal.DISCOSS[v].particion[noParticion-1].nombre,"")!=0){//ver si le tengo que restar el uno
+                                    strcpy(temporal.DISCOSS[v].particion[noParticion-1].nombre,"\0");
+                                    temporal.DISCOSS[v].llenas--;
+                                    disca=fopen("/home/jherson/Escritorio/fa/manager.dsk","rb+");
+                                    fseek(disca,0,SEEK_SET);
+                                    fwrite(&temporal,sizeof(MasterDisk),1,disca);
+                                    usleep(200);
+                                    fclose(disca);
+                                    printf("Se desmonto correctamnte la particion vd%c%d\n",abecedario[v],noParticion);
+                                }*/
+                            }else{
+                                printf("Error no se encontro vd %c particion no se encuentra!\n",abecedario[v]);
+                                break;
+                            }
+                        }else{
+                            printf("El valor de vd%s es no es valido!ERROR!\n",ins[3]);
+                        }
+                    }
+                    //-*-*-*-*-*-*-**-*-*-*-*-**-*-*-*
+                }else
+                    printf("Error en el comando rep!!:: %s\n",token);
+
+            }
+         }//----termina comparacion de id
+     }
+    if(nom &&ser&&way){
+
+        char directory[200]={0};
+        strcpy(directory,"mkdir -p ");
+        char carpeta[250];
+        int e; int ultimo=0;
+        for(e=0;e<200&&ruta[e]!='\0';e++){
+            if(ruta[e]=='/')
+                ultimo=e;
+        }
+        carpeta[0]='\'';
+        for(e=1;e<=ultimo+1;e++)
+            carpeta[e]=ruta[e-1];
+        carpeta[e]='\'';
+        strcat(directory,carpeta);
+        const int dir_err = system(directory);
+        bool pat=true;
+        if (0 != dir_err)
+        {
+            printf("Error al crear Directorio::%s\n",ruta);
+            pat=false;
+
+        }
+
+        FILE *rep=fopen(temporal.DISCOSS[id].nombre,"r+");
+
+        if(rep&&pat){
+            fseek(rep,0,SEEK_SET);
+            MasterBR tmp;
+            EBR tmpE;
+            fread(&tmp,sizeof(MasterBR),1,rep);
+          // fclose(rep);
+
+        FILE *grafo =fopen("/home/jherson/Escritorio/disco.dot","w+");
+
+        if(strcmp(nombre,"mbr")==0){
+            FILE *grafo =fopen("/home/jherson/Escritorio/disco.dot","w+");
+
+            fprintf(grafo,"digraph structura{\n");
+            fprintf(grafo,"node [shape=record,height=.1];\n");
+            fprintf(grafo,"struct3 [shape=record,label=\"{{Nombre|Valor}");
+            fprintf(grafo,"|{mbr_tamanio|%d}",tmp.mbr_tamanio);
+            fprintf(grafo,"|{mbr_fecha_creacion|%s}",tmp.mbr_fecha_creacion);
+            fprintf(grafo,"|{mbr_disk_signature|%d}",tmp.mbr_disk_signature);
+
+            int t;
+            for(t=0;t<4;t++){
+              if(strcmp(tmp.mbr_particion_[t].part_type,"E")==0) {
+                fseek(rep,tmp.mbr_particion_[t].part_start,SEEK_SET);
+                  fread(&tmpE,sizeof(EBR),1,rep);
+                  EBR temp2;
+                  bool aja=true;
+                  int d=1;
+                  while(aja){
+                      if(tmpE.part_next>0){
+                          if(tmpE.part_size>20){
+                            fprintf(grafo,"|{EBR_%d}",d);
+                            fprintf(grafo,"|{part_status_%d|%s}",d,tmpE.part_status);
+                            //fprintf(grafo,"|{part_fit_%s|%d}",d,tmpE.part_fit);
+                            fprintf(grafo,"|{part_start_%d|%d}",d,tmpE.part_start);
+                            fprintf(grafo,"|{part_size_%d|%d}",d,tmpE.part_size);
+                            fprintf(grafo,"|{part_next_%d|%d}",d,tmpE.part_next);
+                          //  fprintf(grafo,"|{part_name_%s|%d}",d,tmpE.part_name);
+                            d++;
+                            fseek(rep,tmpE.part_next,SEEK_SET);
+                            fread(&tmpE,sizeof(EBR),1,rep);
+                              }else{
+                              fseek(rep,tmpE.part_next,SEEK_SET);
+                              fread(&tmpE,sizeof(EBR),1,rep);
+                         }
+                      }else{
+                          //iprimir lo que contiene actual
+                          aja=false;
+                      }
+                  }
+              }else{
+                  if(tmp.mbr_particion_[t].part_size>0){
+                      fprintf(grafo,"|{part_status_%d|%s}",(t+1),tmp.mbr_particion_[t].part_status);
+                      fprintf(grafo,"|{part_type_%d|%s}",(t+1),tmp.mbr_particion_[t].part_type);
+                      fprintf(grafo,"|{part_fit_%d|%s}",(t+1),tmp.mbr_particion_[t].part_fit);
+                      fprintf(grafo,"|{part_start_%d|%d}",(t+1),tmp.mbr_particion_[t].part_start);
+                      fprintf(grafo,"|{part_size_%d|%d}",(t+1),tmp.mbr_particion_[t].part_size);
+                      fprintf(grafo,"|{part_name_%d|%s}",(t+1),tmp.mbr_particion_[t].part_name);
+                  }
+              }
+            }
+            fprintf(grafo,"}");
+
+            fprintf(grafo,"\"];");
+            fprintf(grafo,"}");
+            fclose(grafo);
+            fclose(rep);
+            char coma[200];
+            strcpy(coma,"dot -Tpng /home/jherson/Escritorio/disco.dot -o");
+            strcat(coma,ruta);
+            //system("dot -Tpng /home/jherson/Escritorio/disco.dot -o /home/jherson/Escritorio/discos.png");
+            system(coma);
+            strcat(ruta," &");
+            char abrir[200];
+            strcpy(abrir,"gnome-open ");
+            strcat(abrir,ruta);
+            system(abrir);
+
+        }else if(strcmp(nombre,"disk")==0){
+            fprintf(grafo,"digraph structura{\n");
+            fprintf(grafo,"node [shape=record,height=.1];\n");
+            fprintf(grafo,"struct3 [shape=record,label=\"MBR");
+                 int t;
+                for(t=0;t<4;t++){
+                 if(tmp.mbr_particion_[t].part_size!=0){
+                    if(strcmp(tmp.mbr_particion_[t].part_type,"E")==0){
+                        fprintf(grafo,"|{Extendida|{");
+                        fseek(rep,tmp.mbr_particion_[t].part_start,SEEK_SET);
+                        fread(&tmpE,sizeof(EBR),1,rep);
+                        EBR temp2;
+                        bool aja=true;
+                        while(aja){
+                            if(tmpE.part_next>0){
+                                if(tmpE.part_size>20){
+                                    fseek(rep,tmpE.part_next,SEEK_SET);
+                                    fread(&temp2,sizeof(EBR),1,rep);
+                                   if(temp2.part_next>0 ){
+                                      fprintf(grafo,"EBR|Logica|");
+                                   }else{
+                                     fprintf(grafo,"EBR|Logica");
+                                   }
+                                      fseek(rep,tmpE.part_next,SEEK_SET);
+                                     fread(&tmpE,sizeof(EBR),1,rep);
+                                }else{
+                                    fprintf(grafo,"|Libre");
+                                    fseek(rep,tmpE.part_next,SEEK_SET);
+                                    fread(&tmpE,sizeof(EBR),1,rep);
+                               }
+//                                FILE *disco;
+//                                disco=fopen("/home/jherson/Escritorio/fa/manejador.dsk","ab");
+//                                MasterDisk temp;
+//                                fseek(disco,0,SEEK_SET);
+//                                fread(&temp,sizeof(MasterDisk),1,disco);
+//                                temp.indicador=1;
+//                                fseek(disco,0,SEEK_SET);
+//                                fwrite(&temp,sizeof(MasterDisk),1,disco);
+//                                fclose(disco);
+                            }else{
+                                //iprimir lo que contiene actual
+                                aja=false;
+                            }
+                        }
+                        fprintf(grafo,"}}");
+
+                    }else{
+                        fprintf(grafo,"|Primaria");
+                    }
+                }else{
+                    fprintf(grafo,"|Libre");
+                }
+             }
+                //fprintf(grafo,"}");
+                fprintf(grafo,"\"];");
+                fprintf(grafo,"}");
+                fclose(grafo);
+                fclose(rep);
+                char coma[200];
+                strcpy(coma,"dot -Tpng /home/jherson/Escritorio/disco.dot -o");
+                strcat(coma,ruta);
+                //system("dot -Tpng /home/jherson/Escritorio/disco.dot -o /home/jherson/Escritorio/discos.png");
+                system(coma);
+                strcat(ruta," &");
+                char abrir[200];
+                strcpy(abrir,"gnome-open ");
+                strcat(abrir,ruta);
+                system(abrir);
+            }
+
+        }else{
+            printf("Error tipo de reporte incorrecto!::%s\n",nombre);
+        }
+    }else{
+        printf("Errores en la entrada de Reportes!::%s \n",token);
+    }
+}
