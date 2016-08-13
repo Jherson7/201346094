@@ -34,11 +34,14 @@ int main()
  if(ff){
    printf("Creado manejador de Discos!\n")  ;
  }
- else{int i;
-
-
+ else{
+     int i;
      ff=fopen("/home/jherson/Escritorio/fa/manager.dsk","ab");
      MasterDisk tmp;
+     for(i=0;i<27;i++){
+         tmp.DISCOSS[i].llenas=0;
+         strcpy(tmp.DISCOSS[i].nombre,"\0");
+     }
      tmp.indicador=1;
      fseek(ff,0,SEEK_SET);
      fwrite(&tmp,sizeof(MasterDisk),1,ff);
@@ -83,9 +86,9 @@ int n=0;
         }
 
       //strcpy(comando,"Mkdisk -size::10 -path::\"/home/jherson/Escritorio/fa/\" -name::\"jh.dsk\" +unit::M");
-     // strcpy(comando,"fdisk -size::2 +type::L +unit::M +fit::BF -path::\"/home/jherson/Escritorio/fa/jh.dsk\" -name::\"Particion1\"");
+      // strcpy(comando,"fdisk -size::2 +type::L +unit::M +fit::BF -path::\"/home/jherson/Escritorio/fa/uno.dsk\" -name::\"l13\"");
         //strcpy(comando,"mount -path::\"/home/jherson/Escritorio/fa/disco1.dsk\" -name::\"particion1\"");
-      strcpy(comando,"exec \"/home/jherson/Escritorio/fa/calificaciones.sh\"");
+      //strcpy(comando,"exec \"/home/jherson/Escritorio/fa/calificaciones.sh\"");
         int o;
         char *primerComando=malloc(sizeof(10));
         for(o=0;o<800;o++){
@@ -247,7 +250,7 @@ void comandoExect(char token[], int posIni){
                         int v;
                         while(aja){
                             for(v=0;v<200;v++){
-                                if(caracteres[v+1]=='\n'){
+                                if(caracteres[v+1]=='\n'||caracteres[v+1]=='\r'){
                                     if(caracteres[v]==92){
                                         caracteres[v]='\0';
                                         strcpy(comando,caracteres);
@@ -568,7 +571,7 @@ void deleteDisk(char *token, int indice){
 }
 
 void comandoFseek(char *token, int posIni){
-    char commmm[100];
+    char commmm[400];
     strcpy(commmm,token);
     char *ins=malloc(sizeof(20));
     int tam=0;//variable para el tamanio de la particion con atoi
@@ -589,7 +592,7 @@ void comandoFseek(char *token, int posIni){
     bool way,nome,size,supr;
     way=nome=size=supr=false;
 
-    for(;posIni<800|| token[posIni]!='\0';posIni++){
+    for(;posIni<800 && token[posIni]!='\0'&& token[posIni]!='\n';posIni++){
         copi=0;
         if(token[posIni]=='-'||token[posIni]=='+')
         {
@@ -730,10 +733,11 @@ void comandoFseek(char *token, int posIni){
                             tipoAjuste=1;
                         else
                             tipoAjuste=3;
-                        printf("vamo a calmarnos\n");//activar bandera de dimensional
+
                     }//69=='E' tipo=='P'||tipo==69||tipo=='L'
                     else{
                         printf("Error en la dimensional de type: %s,ERROR!'n",tipo);
+                        posIni=801;
                         break;
                     }
                 }else{
@@ -760,9 +764,13 @@ void comandoFseek(char *token, int posIni){
                             tipoUnidad=2;
                         else
                             tipoUnidad=3;
-                        printf("buen ajuste\n");//activar bandera de dimensional
-                    }else
+
+                    }else{
                         printf("Error en la dimensional de AJUSTE: %s,ERROR!'n",ajuste);
+                        posIni=801;
+                        break;
+                    }
+
                 }else{
                     printf("Error en el parameto AJUSTE %s,ERROR!\n",ins);
                 }
@@ -774,17 +782,17 @@ void comandoFseek(char *token, int posIni){
                     posIni+=2;
                     copi=0;
                     for(;posIni<800;posIni++,copi++){
-                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=='\0')){
+                        if((token[posIni]=='-')||(token[posIni]=='+')||(token[posIni]==32)||(token[posIni]=='\0')||(token[posIni]=='\n')||(token[posIni]=='\r')){
                             break;
                         }
                         delet[copi]=token[posIni];
                     }
                     delet[copi]='\0';
-                    if(delet=="Fast"||delet=="Full"||delet=="fast"||delet=="full"){
+                    if(strcasecmp(delet,"Fast")==0||strcasecmp(delet,"full")==0){
                         if(strcasecmp(delet,"Fast")==0||strcasecmp(delet,"fast")==0)
                             tipoEliminacion=1;
                         else
-                            tipoEliminacion=2;
+                                 tipoEliminacion=2;
                         supr=true;
                     }
 
@@ -847,31 +855,45 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
 
         //condicion si es particion primaria
         if(tipoAjuste==1){
-
+            bool noHay=true;
             for(k=0;k<4;k++){
-                indice+=temporal.mbr_particion_[k].part_size;
-                if(temporal.mbr_particion_[k].part_start==0){
-                    if((k+1)<5){
-                        if((indice+tam)<temporal.mbr_particion_[k+1].part_start && temporal.mbr_tamanio>(indice+tam))
-                            f1=true;
-                        if((temporal.mbr_particion_[k+1].part_start==0 )&&( temporal.mbr_tamanio>(indice+tam)))//aqui verifico
-                            f1=true;//
+                if (temporal.mbr_particion_[k].part_start!=0) {
+                    if(strcasecmp(nombre,temporal.mbr_particion_[k].part_name)==0){
+                    noHay=false;
+                    printf("Error particion en Ruta:%s ya existe! Error::%s\n",direcion,nombre);
                     }
-                    if(f1){
-                        strcpy(temporal.mbr_particion_[k].part_fit,tacomodamiento);
-                        strcpy(temporal.mbr_particion_[k].part_name,nombre);
-                        temporal.mbr_particion_[k].part_size=tam;
-                        temporal.mbr_particion_[k].part_start=indice+1;
-                        strcpy(temporal.mbr_particion_[k].part_status,"1");
-                        strcpy(temporal.mbr_particion_[k].part_type,tajuste);
-                        ff=true;
-                    }
-                    else
-                        printf("Error longitud mayor a tamanio de disco || sobre pasa los limites de otra particion ya creada! \n");
-                    break;
+
                 }
             }
-        }//termina condicion para particion primaria
+
+           if(noHay){
+                for(k=0;k<4;k++){
+                    indice+=temporal.mbr_particion_[k].part_size;
+                    if(temporal.mbr_particion_[k].part_start==0){
+                        if((k+1)<5){
+                            if((indice+tam)<temporal.mbr_particion_[k+1].part_start && temporal.mbr_tamanio>(indice+tam))
+                                f1=true;
+                            if((temporal.mbr_particion_[k+1].part_start==0 )&&( temporal.mbr_tamanio>(indice+tam)))//aqui verifico
+                                f1=true;//
+                        }
+                        if(f1){
+                            strcpy(temporal.mbr_particion_[k].part_fit,tacomodamiento);
+                            strcpy(temporal.mbr_particion_[k].part_name,nombre);
+                            temporal.mbr_particion_[k].part_size=tam;
+                            temporal.mbr_particion_[k].part_start=indice+1;
+                            strcpy(temporal.mbr_particion_[k].part_status,"1");
+                            strcpy(temporal.mbr_particion_[k].part_type,tajuste);
+                            ff=true;
+                            printf("Se creo correctamente la particion Primaria:%s\n",nombre);
+                        }
+                        else
+                            printf("Error longitud mayor a tamanio de disco || sobre pasa los limites de otra particion ya creada! \n");
+                        break;
+                    }
+                }
+             }//termina condicion para particion primaria
+            }
+
         //condicion si es para particion extendida
         else if(tipoAjuste==2){
             int p=0;
@@ -910,6 +932,7 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
                             strcpy(tempEBR.part_status,"0");
                             //termina escritura de EBR
                             fe=true;
+                            printf("Se creo correctamente la particion Extendida:%s\n",nombre);
                         }
                         else
                             printf("Error longitud mayor a tamanio de disco || sobre pasa los limites de otra particion ya creada! \n");
@@ -917,7 +940,7 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
                     }
                 }
             }else{
-                printf("Ya existe una particion extendida! ERROR!\n");
+                printf("Ya existe una particion extendida:%s  ! ERROR!\n",nombre);
             }
         }
         //condicion si es para particion logica
@@ -939,6 +962,7 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
                             if(strcasecmp(tmp.part_name,nombre)==0){
                                 aja=false;
                                 nom=false;
+                                printf("error ya existe ese nombre de particion!:%s\n",nombre);
                             }else{
                                 if(tmp.part_next!=-1){
                                     fseek(archivo,tmp.part_next,SEEK_SET);
@@ -989,6 +1013,7 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
                                     fseek(archivo,temp2.part_start,SEEK_SET);
                                     fwrite(&temp2,sizeof(EBR),1,archivo);//actualizo la siguiente particion logica
                                     fl=true;
+                                    printf("Se creo correctamente la particion logica:%s\n",nombre);
                                     break;
                                 }
 
@@ -1008,6 +1033,7 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
                                     fwrite(&tmp,sizeof(EBR),1,archivo);//aqui actualizo la creacion de de la particion logica
                                     //verificar si debo grabar la particion siguiente
                                     //-*-*-*-*-*-*-*
+                                    printf("Se creo correctamente la particion logica:%s\n",nombre);
                                     fl=true;
                                     break;
                                 }
@@ -1038,7 +1064,7 @@ void crearParticion(char direcion[200], char nombre[20], int tam, int tipoAjuste
         }else if(fl){
             printf("Se creo la particion logica %s\n",nombre);
         }else
-            printf("No se pudo crear la particion\n");
+            printf("No se pudo crear la particion::%s en ruta::%s\n",nombre,direcion);
         fclose(archivo);
     }else{
         printf("Error al abrir disco, no existe,ERROR!\n");
@@ -1076,9 +1102,11 @@ void eliminarParticion(char ruta[], char nombre[], int tipo){
                 }else{
                     fseek(archivo,temporal.mbr_particion_[k].part_start,SEEK_SET);
                     int r;
-                    int total=temporal.mbr_particion_[k].part_size;
-
-                    memset(archivo,0,total);
+                    int total=temporal.mbr_particion_[k].part_size+temporal.mbr_particion_[k].part_start;
+                    for(r=temporal.mbr_particion_[k].part_start;r<total;r++){
+                        fseek(archivo,r,SEEK_SET);
+                        fputc(0,archivo);
+                    }
                     strcpy(temporal.mbr_particion_[k].part_status,"0");
                     strcpy(temporal.mbr_particion_[k].part_type,"");
                     strcpy(temporal.mbr_particion_[k].part_fit,"");
@@ -1089,70 +1117,35 @@ void eliminarParticion(char ruta[], char nombre[], int tipo){
 
             }
         }
+        fclose(archivo);
         //-*-*-*-*-
         for(k=0;k<4;k++){
             if(strcasecmp(temporal.mbr_particion_[k].part_name,"")!=0){
                 if(strcasecmp(temporal.mbr_particion_[k].part_type,"E")==0){
                     bool nom=true;//variable para ver si no existe ya el nombre
                     //*-*-*
+                    FILE *archivo = fopen(ruta,"rb+");
                     EBR tmp;
+                    EBR tmp2;
+                    usleep(200);
                     fseek(archivo,temporal.mbr_particion_[k].part_start,SEEK_SET);
                     fread(&tmp,sizeof(EBR),1,archivo);
                     //*-*-*
                     //aqui debo hacer un algoritmo para verificar que exista el nombre de la particion
-
+                    bool modi = false;
                     while(nom){
                         if(strcasecmp(tmp.part_name,nombre)==0){
                             nom=false;
-                            if(tmp.part_next==-1){//es por que es la primera o
-                                strcpy(tmp.part_fit,"");
-                                strcpy(tmp.part_name,"");
-                                tmp.part_next=-1;
-                                tmp.part_size=0;
-                                strcpy(tmp.part_status,"0");
-
-                            }
-
-                            else{
-                                EBR tmp2;
-                                fseek(archivo,tmp.part_next,SEEK_SET);
-                                fread(&tmp2,sizeof(EBR),1,archivo);
-                                if(tmp2.part_next==-1){
-                                    //quiere decir que debo eliminar el siguiente EBR
-                                    tmp.part_next=-1;
-                                    strcpy(tmp.part_fit,"");
-                                    strcpy(tmp.part_name,"");
-                                    tmp.part_size=0;
-                                    fseek(archivo,tmp.part_start,SEEK_SET);
-                                    fwrite(&tmp,sizeof(EBR),1,archivo);
-                                    //ahora si es full vamos a llenar el espacio
-                                    fseek(archivo,tmp2.part_start,SEEK_SET);
-                                    memset(archivo,9,tmp2.part_size);//aqui relleno el espacio debo ver que este bien
-                                    //si es fast dejamos correr
-
-                                }else {
-                                    EBR tmp3;
-                                    fseek(archivo,tmp2.part_next,SEEK_SET);
-                                    fread(&tmp3,sizeof(EBR),1,archivo);
-
-                                    if(tmp2.part_size==0){
-                                        tmp.part_next=tmp2.part_next;//solo direcciono
-
-                                        //siempre ver si es eliminacion full
-                                    }
-
-                                    else if(tmp3.part_size==0){
-                                        tmp.part_next=tmp3.part_next;
-
-                                    }else{
-                                        strcpy(tmp.part_fit,"");
-                                        strcpy(tmp.part_name,"");
-                                        tmp.part_size=0;
-                                        //guardar cambios
-                                    }
-                                }
-                            }
-
+                            strcpy(tmp.part_fit,"");//este caso solo se puede dar una vez
+                            strcpy(tmp.part_name,"");
+                            //tmp.part_next=-1;
+                            tmp.part_size=0;
+                            strcpy(tmp.part_status,"0");
+                            fseek(archivo,tmp.part_next,SEEK_SET);//necesito acordarme para que hice esto
+                            fread(&tmp2,sizeof(EBR),1,archivo);
+                            if(tmp2.part_size==0&&tmp2.part_next>0)
+                                tmp.part_next=tmp2.part_next;
+                            modi=true;
                             //aqui algoritmo final para particion
                             //pregunto si el tamanio de la siguiente es cero
                             //temporal primero es igual a temporal2_next
@@ -1166,15 +1159,39 @@ void eliminarParticion(char ruta[], char nombre[], int tipo){
                         }
                     }
                     //---termina el metdo para verificar si existe el nombre de la particion
-
-                    fseek(archivo,temporal.mbr_particion_[k].part_start,SEEK_SET);
+                    fseek(archivo,temporal.mbr_particion_[k].part_start,SEEK_SET);//necesito acordarme para que hice esto
                     fread(&tmp,sizeof(EBR),1,archivo);
+                    nom=true;
+                    EBR tmp3;
+                    while(modi){
+                        if(tmp.part_next>0){
+                            fseek(archivo,tmp.part_next,SEEK_SET);//necesito acordarme para que hice esto
+                            fread(&tmp2,sizeof(EBR),1,archivo);
+
+                            if(tmp2.part_next>0){
+                                //tmp.part_next=tmp2.part_next;
+                                fseek(archivo,tmp2.part_next,SEEK_SET);//me paso al siguiente a analizar
+                                fread(&tmp3,sizeof(EBR),1,archivo);
+                                if(tmp2.part_size==0&&tmp3.part_size==0&&tmp3.part_next>0){
+                                    tmp2.part_next=tmp3.part_next;
+                                }
+                            }else{
+                                fseek(archivo,tmp.part_next,SEEK_SET);//necesito acordarme para que hice esto
+                                fread(&tmp2,sizeof(EBR),1,archivo);
+                            }
+                        }else{
+                            modi=false;
+                        }
+
+
+                    }
 
                 }
             }
             if(fl)
                 break;
         }
+        fclose(archivo);
 
         //-*-*-*-*-
 
@@ -1462,6 +1479,8 @@ void ejecutarComandos(char comando[]){
 
 void Reportes(char token[], int posIni){
     int copi;
+    char cooo[400]={0};
+    strcpy(cooo,token);
     char ruta[200]={0};
     char nombre[20];
     char iden[20];
@@ -1519,10 +1538,10 @@ void Reportes(char token[], int posIni){
             //----******comienza la obtencion del name***------------
             else if((strcasecmp(ins,"name")==0)||(strcasecmp(ins,"Name")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
-                    posIni+=2;
+                    posIni+=3;
                     copi=0;
-                    for(;posIni<200;posIni++,copi++){
-                        if((token[posIni]=='-')||(token[posIni]=='\0')||(token[posIni]=='\n')||(token[posIni]==32)){
+                    for(;posIni<800 && token[posIni]!='\0'&&token[posIni]!='\n';posIni++,copi++){
+                        if((token[posIni]=='-')||(token[posIni]=='\0')||(token[posIni]=='\"')||(token[posIni]=='\n')||(token[posIni]==32)){
                           break;
                         }
                         nombre[copi]=token[posIni];
@@ -1531,12 +1550,12 @@ void Reportes(char token[], int posIni){
                  nom=true;
                 }
             }
-            //---------**termina la obtencion del name***------------
+            //---------**termina la obtencion del id***------------
             else if((strcasecmp(ins,"id")==0)||(strcasecmp(ins,"Id")==0)){
                 if(token[posIni]==':'&&token[posIni+1]==':'){
                     posIni+=2;
                     copi=0;
-                    for(;posIni<50;posIni++,copi++){
+                    for(;posIni<800 && token[posIni]!='\0'&&token[posIni]!='\n';posIni++,copi++){
                         if((token[posIni]=='-')||(token[posIni]=='\0')||(token[posIni]=='n')||(token[posIni]==32)){
                             break;
                         }
@@ -1560,17 +1579,7 @@ void Reportes(char token[], int posIni){
                             if(temporal.DISCOSS[v].llenas>0){
                                 id=v;
                                 ser=true;
-                                /*if(strcasecmp(temporal.DISCOSS[v].particion[noParticion-1].nombre,"")!=0){//ver si le tengo que restar el uno
-                                    strcpy(temporal.DISCOSS[v].particion[noParticion-1].nombre,"\0");
-                                    temporal.DISCOSS[v].llenas--;
-                                    disca=fopen("/home/jherson/Escritorio/fa/manager.dsk","rb+");
-                                    fseek(disca,0,SEEK_SET);
-                                    fwrite(&temporal,sizeof(MasterDisk),1,disca);
-                                    usleep(200);
-                                    fclose(disca);
-                                    printf("Se desmonto correctamnte la particion vd%c%d\n",abecedario[v],noParticion);
-                                }*/
-                            }else{
+                           }else{
                                 printf("Error no se encontro vd %c particion no se encuentra!\n",abecedario[v]);
                                 break;
                             }
@@ -1765,5 +1774,4 @@ void Reportes(char token[], int posIni){
         printf("Errores en la entrada de Reportes!::%s \n",token);
     }
 }
-
 
